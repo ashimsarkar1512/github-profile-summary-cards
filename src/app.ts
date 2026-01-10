@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import {sendAnalytics} from './utils/analytics';
 import {createProfileDetailsCard} from './cards/profile-details-card';
 import {createReposPerLanguageCard} from './cards/repos-per-language-card';
 import {createCommitsPerLanguageCard} from './cards/most-commit-language-card';
@@ -37,6 +38,10 @@ const commitFile = async () => {
 // main
 const action = async () => {
     core.info(`Start...`);
+    if (!process.env.GITHUB_TOKEN) {
+        core.setFailed('GITHUB_TOKEN is missing. Please check your workflow configuration.');
+        return;
+    }
     const username = core.getInput('USERNAME', {required: true});
     core.info(`Username: ${username}`);
     const utcOffset = Number(core.getInput('UTC_OFFSET', {required: false}));
@@ -54,7 +59,8 @@ const action = async () => {
         // ProfileDetailsCard
         try {
             core.info(`Creating ProfileDetailsCard...`);
-            await createProfileDetailsCard(username);
+            await createProfileDetailsCard(username, process.env.GITHUB_TOKEN!);
+            await sendAnalytics('action-profile-details-card', {username});
         } catch (error: any) {
             core.error(`Error when creating ProfileDetailsCard \n${error.stack}`);
         }
@@ -62,7 +68,7 @@ const action = async () => {
         // ReposPerLanguageCard
         try {
             core.info(`Creating ReposPerLanguageCard...`);
-            await createReposPerLanguageCard(username, exclude);
+            await createReposPerLanguageCard(username, exclude, process.env.GITHUB_TOKEN!);
         } catch (error: any) {
             core.error(`Error when creating ReposPerLanguageCard \n${error.stack}`);
         }
@@ -70,7 +76,7 @@ const action = async () => {
         // CommitsPerLanguageCard
         try {
             core.info(`Creating CommitsPerLanguageCard...`);
-            await createCommitsPerLanguageCard(username, exclude);
+            await createCommitsPerLanguageCard(username, exclude, process.env.GITHUB_TOKEN!);
         } catch (error: any) {
             core.error(`Error when creating CommitsPerLanguageCard \n${error.stack}`);
         }
@@ -78,14 +84,14 @@ const action = async () => {
         // StatsCard
         try {
             core.info(`Creating StatsCard...`);
-            await createStatsCard(username);
+            await createStatsCard(username, process.env.GITHUB_TOKEN!);
         } catch (error: any) {
             core.error(`Error when creating StatsCard \n${error.stack}`);
         }
         // ProductiveTimeCard
         try {
             core.info(`Creating ProductiveTimeCard...`);
-            await createProductiveTimeCard(username, utcOffset);
+            await createProductiveTimeCard(username, utcOffset, process.env.GITHUB_TOKEN!);
         } catch (error: any) {
             core.error(`Error when creating ProductiveTimeCard \n${error.stack}`);
         }
@@ -123,11 +129,11 @@ const action = async () => {
 
 const main = async (username: string, utcOffset: number, exclude: Array<string>) => {
     try {
-        await createProfileDetailsCard(username);
-        await createReposPerLanguageCard(username, exclude);
-        await createCommitsPerLanguageCard(username, exclude);
-        await createStatsCard(username);
-        await createProductiveTimeCard(username, utcOffset);
+        await createProfileDetailsCard(username, process.env.GITHUB_TOKEN!);
+        await createReposPerLanguageCard(username, exclude, process.env.GITHUB_TOKEN!);
+        await createCommitsPerLanguageCard(username, exclude, process.env.GITHUB_TOKEN!);
+        await createStatsCard(username, process.env.GITHUB_TOKEN!);
+        await createProductiveTimeCard(username, utcOffset, process.env.GITHUB_TOKEN!);
         generatePreviewMarkdown(false);
     } catch (error: any) {
         console.error(error);

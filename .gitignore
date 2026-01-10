@@ -69,8 +69,6 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
-.env.test
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -127,3 +125,4 @@ tests/runner/*
 
 # Ignore jest report
 junit.xml
+config.bat

@@ -6,8 +6,15 @@ import {getContributionByYear} from '../github-api/contributions-by-year';
 import {createDetailCard} from '../templates/profile-details-card';
 import {writeSVG} from '../utils/file-writer';
 
-export const createProfileDetailsCard = async function (username: string) {
-    const profileDetailsData = await getProfileDetailsData(username);
+/**
+ * Creates a Profile Details Card SVG.
+ *
+ * @param {string} username - The GitHub username.
+ * @param {string} token - The GitHub API token.
+ * @return {Promise<void>}
+ */
+export const createProfileDetailsCard = async function (username: string, token: string) {
+    const profileDetailsData = await getProfileDetailsData(username, token);
     for (const themeName of ThemeMap.keys()) {
         const title =
             profileDetailsData[0].name == null ? `${username}` : `${username} (${profileDetailsData[0].name})`;
@@ -21,9 +28,21 @@ export const createProfileDetailsCard = async function (username: string) {
         writeSVG(themeName, '0-profile-details', svgString);
     }
 };
-export const getProfileDetailsSVGWithThemeName = async function (username: string, themeName: string): Promise<string> {
+/**
+ * Generates the SVG for the Profile Details Card.
+ *
+ * @param {string} username - The GitHub username.
+ * @param {string} themeName - The card theme.
+ * @param {string} token - The GitHub API token.
+ * @return {Promise<string>} The SVG string.
+ */
+export const getProfileDetailsSVGWithThemeName = async function (
+    username: string,
+    themeName: string,
+    token: string
+): Promise<string> {
     if (!ThemeMap.has(themeName)) throw new Error('Theme does not exist');
-    const profileDetailsData = await getProfileDetailsData(username);
+    const profileDetailsData = await getProfileDetailsData(username, token);
     const title = profileDetailsData[0].name == null ? `${username}` : `${username} (${profileDetailsData[0].name})`;
     return getProfileDetailsSVG(title, profileDetailsData[0].contributions, profileDetailsData[1], themeName);
 };
@@ -52,24 +71,29 @@ const getProfileDateJoined = function (profileDetails: ProfileDetails): string {
     return years
         ? `${years} year${s(years)} ago`
         : months
-        ? `${months} month${s(months)} ago`
-        : `${days} day${s(days)} ago`;
+          ? `${months} month${s(months)} ago`
+          : `${days} day${s(days)} ago`;
 };
 
 const getProfileDetailsData = async function (
-    username: string
+    username: string,
+    token: string
 ): Promise<[ProfileDetails, {index: number; icon: string; name: string; value: string}[]]> {
-    const profileDetails = await getProfileDetails(username);
+    const profileDetails = await getProfileDetails(username, token);
     let totalContributions = 0;
     if (process.env.VERCEL) {
         // If running on vercel, we only calculate for last 1 year to avoid hobby timeout limit
-        profileDetails.contributionYears = profileDetails.contributionYears.slice(0, 1);
-        for (const year of profileDetails.contributionYears) {
-            totalContributions += (await getContributionByYear(username, year)).totalContributions;
+        // Sort years descending to ensure we get the latest
+        profileDetails.contributionYears.sort((a, b) => b - a);
+        const latestYear = profileDetails.contributionYears[0];
+
+        if (latestYear !== undefined) {
+            profileDetails.contributionYears = [latestYear];
+            totalContributions += (await getContributionByYear(username, latestYear, token)).totalContributions;
         }
     } else {
         for (const year of profileDetails.contributionYears) {
-            totalContributions += (await getContributionByYear(username, year)).totalContributions;
+            totalContributions += (await getContributionByYear(username, year, token)).totalContributions;
         }
     }
 
