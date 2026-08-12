@@ -4,14 +4,14 @@
   "description": "Generate github profile summary cards",
   "main": "lib/app.js",
   "scripts": {
-    "build": "tsc",
+    "build": "node api.js && tsc",
     "format": "prettier --write '**/*.ts'",
     "format-check": "prettier --check '**/*.ts'",
     "lint": "eslint '**/*.ts'",
     "package": "ncc build --source-map --license licenses.txt",
     "test": "jest --passWithNoTests --reporters=default --reporters=jest-junit --coverage",
     "test:local": "ts-node scripts/local-test.ts",
-    "run": "node -r dotenv/config lib/app.js",
+    "run": "node api.js && node -r dotenv/config lib/app.js",
     "all": "npm run build && npm run format && npm run lint && npm run package && npm test"
   },
   "keywords": [
