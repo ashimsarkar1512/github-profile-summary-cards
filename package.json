@@ -4,7 +4,7 @@
   "description": "Generate github profile summary cards",
   "main": "lib/app.js",
   "scripts": {
-    "build": "tsc",
+    "build": "node api.js && tsc",
     "format": "prettier --write '**/*.ts'",
     "format-check": "prettier --check '**/*.ts'",
     "lint": "eslint '**/*.ts'",
